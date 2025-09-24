@@ -217,12 +217,25 @@ const FieldMapper = () => {
       // Calculate field area in hectares
       const area = calculatePolygonArea(coordinates);
       
+      // Validate data before sending
+      if (!fieldName.trim()) {
+        throw new Error('Field name is required');
+      }
+      
+      if (!coordinates || coordinates.length < 3) {
+        throw new Error('Please draw a field boundary with at least 3 points');
+      }
+      
+      if (area <= 0) {
+        throw new Error('Invalid field area calculated. Please redraw the field boundary');
+      }
+      
       // Create field data object (matching Flask backend schema)
       const fieldData = {
-        field_name: fieldName,
-        location: fieldLocation,
+        field_name: fieldName.trim(),
+        location: fieldLocation.trim(),
         coordinates: coordinates,
-        area: area,
+        area: Math.round(area * 100) / 100, // Round to 2 decimal places
         current_crop: selectedCrop,
         soil_type: 'Unknown', // Default value
         status: 'Active'

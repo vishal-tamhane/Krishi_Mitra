@@ -122,8 +122,20 @@ const CropLifecycle = () => {
       return;
     }
 
+    if (!cropName.trim()) {
+      setError('Please enter a valid crop name');
+      return;
+    }
+
     setIsLoading(true);
     setError('');
+
+    const requestData = {
+      crop_type: cropName.trim(),
+      sowing_date: sowingDate
+    };
+
+    console.log('Sending crop prediction request:', requestData);
 
     try {
       const response = await fetch(API_URLS.CROP_CYCLE_PREDICTION, {
@@ -131,20 +143,22 @@ const CropLifecycle = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          crop_type: cropName,
-          sowing_date: sowingDate
-        }),
+        body: JSON.stringify(requestData),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get crop prediction');
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || `Server error: ${response.status}`;
+        console.error('Crop prediction API error:', errorMessage);
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
+      console.log('Crop prediction result:', result);
       setPredictionResult(result);
       setShowPredictionForm(false);
     } catch (err) {
+      console.error('Crop prediction error:', err);
       setError('Error getting crop prediction: ' + err.message);
     } finally {
       setIsLoading(false);

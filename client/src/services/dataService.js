@@ -16,7 +16,9 @@ const apiCall = async (url, options = {}) => {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+      const errorMessage = errorData.error || `HTTP ${response.status}: ${response.statusText}`;
+      console.error(`API Error (${response.status}):`, errorMessage);
+      throw new Error(errorMessage);
     }
 
     return await response.json();
