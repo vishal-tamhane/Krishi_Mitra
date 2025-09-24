@@ -10,5 +10,4 @@ psutil
 matplotlib
 pymongo
 dnspython
-bson
 gunicorn
