@@ -11,3 +11,4 @@ matplotlib
 pymongo
 dnspython
 bson
+gunicorn
