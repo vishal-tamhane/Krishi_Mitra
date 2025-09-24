@@ -1,9 +1,18 @@
 // This file contains API URLs and other configuration values
-// Get Flask backend URL from environment variables
-const FLASK_BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://krishi-mitra-backend-sdsb.onrender.com';
-
 // Determine if we're in production based on environment
 const isDevelopment = import.meta.env ? import.meta.env.DEV : (process.env.NODE_ENV === 'development');
+
+// Get Flask backend URL - Force production URL if not in development
+const FLASK_BACKEND_URL = isDevelopment 
+  ? (import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:5002')
+  : 'https://krishi-mitra-backend-sdsb.onrender.com';
+
+// Debug logging
+console.log('Environment check:', {
+  isDevelopment,
+  VITE_BACKEND_URL: import.meta.env.VITE_BACKEND_URL,
+  FLASK_BACKEND_URL
+});
 
 // Client URL configuration
 const CLIENT_URL = isDevelopment
