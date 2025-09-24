@@ -10,6 +10,7 @@ import {
   faEye,
   faMedkit
 } from '@fortawesome/free-solid-svg-icons';
+import config from '../config.js';
 
 const PlantDiseaseDetection = () => {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -86,7 +87,7 @@ const PlantDiseaseDetection = () => {
       formData.append('plantName', plantName.trim());
 
       // Replace with your backend upload endpoint
-      const response = await fetch('http://localhost:5000/api/upload-disease-image', {
+      const response = await fetch(config.API_URLS.UPLOAD_DISEASE_IMAGE, {
         method: 'POST',
         body: formData,
       });
@@ -100,7 +101,7 @@ const PlantDiseaseDetection = () => {
       if (result.success) {
         const timestamp = new Date().getTime();
         // Use the resultImagePath returned by the server with the plant name
-        setResultImage(`http://localhost:5000${result.resultImagePath}?t=${timestamp}`);
+        setResultImage(config.API_URLS.DISEASE_IMAGE_RESULT(result.resultImagePath) + `?t=${timestamp}`);
 
         setDiseaseInfo(result.diseaseInfo || {
           name: 'Analysis Complete',

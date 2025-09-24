@@ -13,6 +13,7 @@ import {
   faEye,
   faPlus
 } from '@fortawesome/free-solid-svg-icons';
+import { API_URLS } from '../config.js';
 
 const CropLifecycle = () => {
   const [selectedField, setSelectedField] = useState('north-field');
@@ -125,7 +126,7 @@ const CropLifecycle = () => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:5002/predict-crop-cycle', {
+      const response = await fetch(API_URLS.CROP_CYCLE_PREDICTION, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

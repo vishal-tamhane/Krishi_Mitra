@@ -9,8 +9,10 @@
  * and API endpoints needed for the crop management feature.
  */
 
-// API Base URL - Replace with actual backend URL
-const API_BASE_URL = 'http://localhost:3001/api'; // Example URL
+import config from '../config.js';
+
+// API Base URL - Using centralized configuration
+const API_BASE_URL = config.FLASK_BACKEND_URL + '/api';
 
 /**
  * CROP LIFECYCLE TRACKING APIs

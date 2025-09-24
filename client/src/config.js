@@ -1,6 +1,6 @@
 // This file contains API URLs and other configuration values
 // Get Flask backend URL from environment variables
-const FLASK_BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:5002';
+const FLASK_BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://krishi-mitra-backend-sdsb.onrender.com';
 
 // Determine if we're in production based on environment
 const isDevelopment = import.meta.env ? import.meta.env.DEV : (process.env.NODE_ENV === 'development');
@@ -41,7 +41,11 @@ export const API_URLS = {
   GROWTH_STAGES: `${FLASK_BACKEND_URL}/growth-stages`,
   IRRIGATION_SCHEDULE: `${FLASK_BACKEND_URL}/irrigation-schedule`,
   FERTILIZER_SCHEDULE: `${FLASK_BACKEND_URL}/fertilizer-schedule`,
-  WATER_BALANCE: `${FLASK_BACKEND_URL}/water-balance-summary`
+  WATER_BALANCE: `${FLASK_BACKEND_URL}/water-balance-summary`,
+  
+  // Plant Disease Detection
+  UPLOAD_DISEASE_IMAGE: `${FLASK_BACKEND_URL}/api/upload-disease-image`,
+  DISEASE_IMAGE_RESULT: (imagePath) => `${FLASK_BACKEND_URL}${imagePath}`
 };
 
 export default {

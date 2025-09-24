@@ -9,8 +9,10 @@
  * - Support resources
  */
 
-// Mock API base URL - replace with actual backend URL
-const API_BASE_URL = 'http://localhost:5000/api/financial-aid';
+import config from '../config.js';
+
+// API base URL - using centralized configuration
+const API_BASE_URL = config.FLASK_BACKEND_URL + '/api/financial-aid';
 
 /**
  * Government Schemes Service
