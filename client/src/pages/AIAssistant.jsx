@@ -290,13 +290,7 @@ const AIAssistant = () => {
 
       {/* --- Input Section --- */}
       <div className="p-3 bg-white border-t border-gray-200 shadow-inner sticky bottom-0 z-10">
-        <form onSubmit={handleSendMessage} className="max-w-2xl mx-auto flex items-center gap-2">
-          <button type="button" className="rounded-full p-2 bg-blue-50 hover:bg-blue-100 text-blue-700 transition" tabIndex={-1} title="Voice (coming soon)" disabled>
-            <FontAwesomeIcon icon={faMicrophone} />
-          </button>
-          <button type="button" className="rounded-full p-2 bg-green-50 hover:bg-green-100 text-green-700 transition" tabIndex={-1} title="Upload image (coming soon)" disabled>
-            <FontAwesomeIcon icon={faImage} />
-          </button>
+        <form onSubmit={handleSendMessage} className="max-w-2xl mx-auto flex items-center gap-2">          
           <input
             type="text"
             value={message}
