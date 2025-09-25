@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-
 import { Link, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { MdDashboard } from "react-icons/md";
@@ -66,10 +65,13 @@ const Sidebar = ({ isSidebarOpen, isCollapsed, toggleSidebar }) => {
   
   // Detect screen size for responsive behavior
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isTablet, setIsTablet] = useState(window.innerWidth >= 768 && window.innerWidth < 1024);
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
+      const width = window.innerWidth;
+      setIsMobile(width < 768);
+      setIsTablet(width >= 768 && width < 1024);
     };
 
     window.addEventListener('resize', handleResize);
@@ -101,12 +103,12 @@ const Sidebar = ({ isSidebarOpen, isCollapsed, toggleSidebar }) => {
     return location.pathname === path;
   };
 
-  // Handler to collapse sidebar on link click if screen width < 600px
+  // Handler to collapse sidebar on link click for mobile devices
 const handleLinkClick = useCallback(() => {
-  if (window.innerWidth < 600 && isSidebarOpen) {
-    toggleSidebar(); // Collapse sidebar on small screens
+  if (isMobile && isSidebarOpen) {
+    toggleSidebar(); // Collapse sidebar on mobile screens
   }
-}, [isSidebarOpen, toggleSidebar]);
+}, [isMobile, isSidebarOpen, toggleSidebar]);
 
 // Attach the click handler to sidebar links using event delegation
 useEffect(() => {
@@ -128,22 +130,28 @@ useEffect(() => {
   return (
     <aside 
       id="sidebar"
-      className={`fixed top-0 left-0 z-40 h-screen transition-all duration-300 ease-in-out bg-white border-r border-blue-200 shadow-lg ${
+      className={`fixed top-0 left-0 z-40 h-screen transition-all duration-300 ease-in-out bg-white border-r border-blue-200 shadow-xl ${
         isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-      } ${isMobile ? 'w-[90vw] sm:w-[320px]' : ''} ${!isMobile && isCollapsed ? 'md:w-20' : 'md:w-64'}` }
+      } ${
+        isMobile 
+          ? 'w-[85vw] max-w-[300px] sm:max-w-[320px]' 
+          : isTablet 
+            ? (isCollapsed ? 'w-16' : 'w-60') 
+            : (isCollapsed ? 'w-20' : 'w-64')
+      }` }
       aria-label="Sidebar"
     >
       <div className="h-full flex flex-col justify-between overflow-y-auto pb-20 md:pb-0 overscroll-contain scroll-smooth scrollbar-none">
         <div>
           {/* Top section with logo & collapse button */}
-          <div className="flex items-center justify-between py-4 px-4 border-b border-blue-200 sticky top-0 bg-blue-600 z-10 shadow-md">
+          <div className="flex items-center justify-between py-3 px-3 md:py-4 md:px-4 border-b border-blue-200 sticky top-0 bg-blue-600 z-10 shadow-md">
             {!isCollapsed && (
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-md">
-                  <FontAwesomeIcon icon={faLeaf} className="text-blue-600 text-lg" />
+              <div className="flex items-center space-x-2 md:space-x-3 min-w-0 flex-1">
+                <div className="w-7 h-7 md:w-8 md:h-8 bg-white rounded-lg flex items-center justify-center shadow-md flex-shrink-0">
+                  <FontAwesomeIcon icon={faLeaf} className="text-blue-600 text-base md:text-lg" />
                 </div>
-                <div className="flex flex-col">
-                  <span className="font-bold text-white text-xl">Krishi Mitra</span>
+                <div className="flex flex-col min-w-0">
+                  <span className="font-bold text-white text-lg md:text-xl truncate">Krishi Mitra</span>
                   <span className="text-xs text-blue-100 hidden sm:block">Smart Farming Assistant</span>
                 </div>
               </div>
@@ -153,39 +161,39 @@ useEffect(() => {
             <button 
               onClick={toggleSidebar} 
               type="button" 
-              className={`${isCollapsed ? 'mx-auto' : ''} inline-flex items-center justify-center p-2 rounded-lg text-white hover:bg-blue-700 transition-colors duration-200`}
+              className={`${isCollapsed ? 'mx-auto' : 'ml-2'} inline-flex items-center justify-center p-2 rounded-lg text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 transition-all duration-200 flex-shrink-0`}
               aria-expanded={!isCollapsed}
               aria-label="Toggle sidebar collapse"
             >
-              <FontAwesomeIcon icon={isCollapsed ? faChevronRight : faChevronLeft} className="w-4 h-4" />
+              <FontAwesomeIcon icon={isCollapsed ? faChevronRight : faChevronLeft} className="w-3 h-3 md:w-4 md:h-4" />
               <span className="sr-only">Toggle sidebar</span>
             </button>
           </div>
           
           {/* Navigation Links */}
-          <nav className="mt-4 px-2 sm:px-3">
+          <nav className="mt-3 md:mt-4 px-2 md:px-3">
             {/* Main Dashboard */}
-            <div className="mb-5">
+            <div className="mb-4 md:mb-5">
               {!isCollapsed && (
                 <h3 className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-2 px-2">
                   Main
                 </h3>
               )}
-              <ul className="space-y-1.5">
+              <ul className="space-y-1 md:space-y-1.5">
                 <li>
                   <Link
                     to="/"
-                    className={`flex items-center px-2.5 sm:px-3 py-2.5 rounded-lg ${isCollapsed ? 'justify-center' : ''} ${
+                    className={`flex items-center px-2 md:px-3 py-2 md:py-2.5 rounded-lg ${isCollapsed ? 'justify-center' : ''} ${
                       isActive('/') 
                         ? 'bg-blue-500 text-white font-medium shadow-sm' 
                         : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
-                    } group transition-all duration-200`}
+                    } group transition-all duration-200 touch-manipulation`}
                   >
                     <FontAwesomeIcon
                       icon={faHome}
-                      className={`w-5 h-5 ${isActive('/') ? 'text-white' : 'text-gray-500 group-hover:text-blue-600'}`}
+                      className={`w-4 h-4 md:w-5 md:h-5 ${isActive('/') ? 'text-white' : 'text-gray-500 group-hover:text-blue-600'}`}
                     />
-                    {!isCollapsed && <span className="ml-3 whitespace-nowrap">Dashboard</span>}
+                    {!isCollapsed && <span className="ml-2 md:ml-3 whitespace-nowrap text-sm md:text-base">Dashboard</span>}
                   </Link>
                 </li>
               </ul>
@@ -198,22 +206,22 @@ useEffect(() => {
                 </h3>
               )}
               <ul className="space-y-1">
-              <li>
-                        <Link
-                          to="/create-field"
-                          className={`flex items-center px-3 py-2 rounded-md ${
-                            isActive('/create-field') 
-                              ? 'bg-blue-500 text-white font-medium' 
-                              : 'text-gray-600 hover:text-blue-700 hover:bg-blue-50'
-                          } transition-all duration-200`}
-                        >
-                          <FontAwesomeIcon
-                            icon={faDraftingCompass}
-                            className={`w-4 h-4 mr-2 ${isActive('/create-field') ? 'text-white' : 'text-gray-500'}`}
-                          />
-                          <span>Create New Field</span>
-                        </Link>
-                      </li>
+                <li>
+                  <Link
+                    to="/create-field"
+                    className={`flex items-center px-2 md:px-3 py-2 rounded-lg ${isCollapsed ? 'justify-center' : ''} ${
+                      isActive('/create-field') 
+                        ? 'bg-blue-500 text-white font-medium shadow-sm' 
+                        : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
+                    } group transition-all duration-200 touch-manipulation`}
+                  >
+                    <FontAwesomeIcon
+                      icon={faDraftingCompass}
+                      className={`w-4 h-4 md:w-5 md:h-5 ${isActive('/create-field') ? 'text-white' : 'text-gray-500 group-hover:text-blue-600'}`}
+                    />
+                    {!isCollapsed && <span className="ml-2 md:ml-3 whitespace-nowrap text-sm md:text-base">Create New Field</span>}
+                  </Link>
+                </li>
               </ul>
             </div>
 
@@ -228,49 +236,49 @@ useEffect(() => {
                 <li>
                   <Link
                     to="/crop-lifecycle"
-                    className={`flex items-center px-3 py-2.5 rounded-lg ${isCollapsed ? 'justify-center' : ''} ${
+                    className={`flex items-center px-2 md:px-3 py-2 md:py-2.5 rounded-lg ${isCollapsed ? 'justify-center' : ''} ${
                       isActive('/crop-lifecycle') 
                         ? 'bg-blue-500 text-white font-medium shadow-sm' 
                         : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
-                    } group transition-all duration-200`}
+                    } group transition-all duration-200 touch-manipulation`}
                   >
                     <FontAwesomeIcon
                       icon={faSeedling}
-                      className={`w-5 h-5 ${isActive('/crop-lifecycle') ? 'text-white' : 'text-gray-500 group-hover:text-blue-600'}`}
+                      className={`w-4 h-4 md:w-5 md:h-5 ${isActive('/crop-lifecycle') ? 'text-white' : 'text-gray-500 group-hover:text-blue-600'}`}
                     />
-                    {!isCollapsed && <span className="ml-3 whitespace-nowrap">Crop Lifecycle</span>}
+                    {!isCollapsed && <span className="ml-2 md:ml-3 whitespace-nowrap text-sm md:text-base">Crop Lifecycle</span>}
                   </Link>
                 </li>
                 <li>
                   <Link
                     to="/crop-prediction"
-                    className={`flex items-center px-3 py-2.5 rounded-lg ${isCollapsed ? 'justify-center' : ''} ${
+                    className={`flex items-center px-2 md:px-3 py-2 md:py-2.5 rounded-lg ${isCollapsed ? 'justify-center' : ''} ${
                       isActive('/crop-prediction') 
                         ? 'bg-blue-500 text-white font-medium shadow-sm' 
                         : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
-                    } group transition-all duration-200`}
+                    } group transition-all duration-200 touch-manipulation`}
                   >
                     <FontAwesomeIcon
                       icon={faChartLine}
-                      className={`w-5 h-5 ${isActive('/crop-prediction') ? 'text-white' : 'text-gray-500 group-hover:text-blue-600'}`}
+                      className={`w-4 h-4 md:w-5 md:h-5 ${isActive('/crop-prediction') ? 'text-white' : 'text-gray-500 group-hover:text-blue-600'}`}
                     />
-                    {!isCollapsed && <span className="ml-3 whitespace-nowrap">Crop Prediction</span>}
+                    {!isCollapsed && <span className="ml-2 md:ml-3 whitespace-nowrap text-sm md:text-base">Crop Prediction</span>}
                   </Link>
                 </li>
                 <li>
                   <Link
                     to="/yield-prediction"
-                    className={`flex items-center px-3 py-2.5 rounded-lg ${isCollapsed ? 'justify-center' : ''} ${
+                    className={`flex items-center px-2 md:px-3 py-2 md:py-2.5 rounded-lg ${isCollapsed ? 'justify-center' : ''} ${
                       isActive('/yield-prediction') 
                         ? 'bg-blue-500 text-white font-medium shadow-sm' 
                         : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
-                    } group transition-all duration-200`}
+                    } group transition-all duration-200 touch-manipulation`}
                   >
                     <FontAwesomeIcon
                       icon={faWheatAwn}
-                      className={`w-5 h-5 ${isActive('/yield-prediction') ? 'text-white' : 'text-gray-500 group-hover:text-blue-600'}`}
+                      className={`w-4 h-4 md:w-5 md:h-5 ${isActive('/yield-prediction') ? 'text-white' : 'text-gray-500 group-hover:text-blue-600'}`}
                     />
-                    {!isCollapsed && <span className="ml-3 whitespace-nowrap">Yield Prediction</span>}
+                    {!isCollapsed && <span className="ml-2 md:ml-3 whitespace-nowrap text-sm md:text-base">Yield Prediction</span>}
                   </Link>
                 </li>
               </ul>
@@ -287,17 +295,17 @@ useEffect(() => {
                 <li>
                   <Link
                     to="/ai-assistant"
-                    className={`flex items-center px-3 py-2.5 rounded-lg ${isCollapsed ? 'justify-center' : ''} ${
+                    className={`flex items-center px-2 md:px-3 py-2 md:py-2.5 rounded-lg ${isCollapsed ? 'justify-center' : ''} ${
                       isActive('/ai-assistant') 
                         ? 'bg-blue-500 text-white font-medium shadow-sm' 
                         : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
-                    } group transition-all duration-200`}
+                    } group transition-all duration-200 touch-manipulation`}
                   >
                     <FontAwesomeIcon
                       icon={faRobot}
-                      className={`w-5 h-5 ${isActive('/ai-assistant') ? 'text-white' : 'text-gray-500 group-hover:text-blue-600'}`}
+                      className={`w-4 h-4 md:w-5 md:h-5 ${isActive('/ai-assistant') ? 'text-white' : 'text-gray-500 group-hover:text-blue-600'}`}
                     />
-                    {!isCollapsed && <span className="ml-3 whitespace-nowrap">AI Assistant</span>}
+                    {!isCollapsed && <span className="ml-2 md:ml-3 whitespace-nowrap text-sm md:text-base">AI Assistant</span>}
                   </Link>
                 </li>
               </ul>
@@ -306,8 +314,8 @@ useEffect(() => {
         </div>
 
         {/* Bottom Section */}
-        <div className="mt-auto border-t border-blue-200 pt-4">
-          <div className="px-3">
+        <div className="mt-auto border-t border-blue-200 pt-3 md:pt-4">
+          <div className="px-2 md:px-3">
             {!isCollapsed && (
               <h3 className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-2 px-2">
                 Account
@@ -317,17 +325,17 @@ useEffect(() => {
               <li>
                 <Link
                   to="/profile"
-                  className={`flex items-center px-3 py-2.5 rounded-lg ${isCollapsed ? 'justify-center' : ''} ${
+                  className={`flex items-center px-2 md:px-3 py-2 md:py-2.5 rounded-lg ${isCollapsed ? 'justify-center' : ''} ${
                     isActive('/profile') 
                       ? 'bg-blue-500 text-white font-medium shadow-sm' 
                       : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
-                  } group transition-all duration-200`}
+                  } group transition-all duration-200 touch-manipulation`}
                 >
                   <FontAwesomeIcon
                     icon={faUser}
-                    className={`w-5 h-5 ${isActive('/profile') ? 'text-white' : 'text-gray-500 group-hover:text-blue-600'}`}
+                    className={`w-4 h-4 md:w-5 md:h-5 ${isActive('/profile') ? 'text-white' : 'text-gray-500 group-hover:text-blue-600'}`}
                   />
-                  {!isCollapsed && <span className="ml-3 whitespace-nowrap">Profile</span>}
+                  {!isCollapsed && <span className="ml-2 md:ml-3 whitespace-nowrap text-sm md:text-base">Profile</span>}
                 </Link>
               </li>              
             </ul>
