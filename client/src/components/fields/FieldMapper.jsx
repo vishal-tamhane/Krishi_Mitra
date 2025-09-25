@@ -466,17 +466,17 @@ const FieldMapper = () => {
         </div>
         
         <div className="field-mapper-sidebar">
-          <div className="field-details">
-            <h3>
-              <FontAwesomeIcon icon={faInfoCircle} />
-              Field Information
-            </h3>
+          <div className="field-details field-info-card">
+            <div className="field-info-header">
+              <FontAwesomeIcon icon={faInfoCircle} className="field-info-icon" />
+              <h3>Field Information</h3>
+            </div>
             
             <div className="field-form">
               <div className="form-group required form-group-animated">
                 <label htmlFor="fieldNameInput">
                   <FontAwesomeIcon icon={faTag} />
-                  Field Name
+                  Field Name <span className="required-star">*</span>
                 </label>
                 <input 
                   type="text" 
@@ -495,17 +495,20 @@ const FieldMapper = () => {
               <div className="form-group required form-group-animated">
                 <label htmlFor="fieldLocation">
                   <FontAwesomeIcon icon={faLocationDot} />
-                  Location
+                  Location <span className="required-star">*</span>
                 </label>
-                <input 
-                  type="text" 
-                  id="fieldLocation" 
-                  className={`form-control ${loading ? 'form-loading' : ''}`}
-                  placeholder="Field Location (e.g. Nashik, Maharashtra)"
-                  value={fieldLocation}
-                  onChange={(e) => setFieldLocation(e.target.value)}
-                  disabled={loading}
-                />
+                <div className="input-with-icon">
+                  <input 
+                    type="text" 
+                    id="fieldLocation" 
+                    className={`form-control ${loading ? 'form-loading' : ''}`}
+                    placeholder="Field Location (e.g. Nashik, Maharashtra)"
+                    value={fieldLocation}
+                    onChange={(e) => setFieldLocation(e.target.value)}
+                    disabled={loading}
+                  />
+                  <FontAwesomeIcon icon={faMapMarkerAlt} className="input-icon" />
+                </div>
                 <div className="form-help-text">
                   Enter a descriptive location for your field
                 </div>
@@ -514,22 +517,24 @@ const FieldMapper = () => {
               <div className="form-group required form-group-animated">
                 <label htmlFor="cropSelect">
                   <FontAwesomeIcon icon={faSeedling} />
-                  Select Crop
+                  Select Crop <span className="required-star">*</span>
                 </label>
-                <select
-                  id="cropSelect"
-                  className={`form-control ${loading ? 'form-loading' : ''}`}
-                  value={selectedCrop}
-                  onChange={(e) => setSelectedCrop(e.target.value)}
-                  disabled={loading}
-                >
-                  <option value="">-- Select Crop --</option>
-                  {cropOptions.map((crop) => (
-                    <option key={crop} value={crop}>
-                      {crop}
-                    </option>
-                  ))}
-                </select>
+                <div className="custom-select-wrapper">
+                  <select
+                    id="cropSelect"
+                    className={`form-control custom-select ${loading ? 'form-loading' : ''}`}
+                    value={selectedCrop}
+                    onChange={(e) => setSelectedCrop(e.target.value)}
+                    disabled={loading}
+                  >
+                    <option value="">-- Select Crop --</option>
+                    {cropOptions.map((crop) => (
+                      <option key={crop} value={crop}>
+                        {crop}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <div className="form-help-text">
                   Select the crop you are planning to grow in this field
                 </div>

@@ -130,7 +130,7 @@ useEffect(() => {
       id="sidebar"
       className={`fixed top-0 left-0 z-40 h-screen transition-all duration-300 ease-in-out bg-white border-r border-blue-200 shadow-lg ${
         isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-      } ${isMobile ? 'w-[85vw] max-w-[300px]' : ''} ${!isMobile && isCollapsed ? 'md:w-20' : 'md:w-64'}` }
+      } ${isMobile ? 'w-[90vw] sm:w-[320px]' : ''} ${!isMobile && isCollapsed ? 'md:w-20' : 'md:w-64'}` }
       aria-label="Sidebar"
     >
       <div className="h-full flex flex-col justify-between overflow-y-auto pb-20 md:pb-0 overscroll-contain scroll-smooth scrollbar-none">
@@ -142,7 +142,10 @@ useEffect(() => {
                 <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-md">
                   <FontAwesomeIcon icon={faLeaf} className="text-blue-600 text-lg" />
                 </div>
-                <span className="font-bold text-white text-xl">Krishi Mitra</span>
+                <div className="flex flex-col">
+                  <span className="font-bold text-white text-xl">Krishi Mitra</span>
+                  <span className="text-xs text-blue-100 hidden sm:block">Smart Farming Assistant</span>
+                </div>
               </div>
             )}
             
@@ -160,19 +163,19 @@ useEffect(() => {
           </div>
           
           {/* Navigation Links */}
-          <nav className="mt-4 px-3">
+          <nav className="mt-4 px-2 sm:px-3">
             {/* Main Dashboard */}
-            <div className="mb-4">
+            <div className="mb-5">
               {!isCollapsed && (
                 <h3 className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-2 px-2">
                   Main
                 </h3>
               )}
-              <ul className="space-y-1">
+              <ul className="space-y-1.5">
                 <li>
                   <Link
                     to="/"
-                    className={`flex items-center px-3 py-2.5 rounded-lg ${isCollapsed ? 'justify-center' : ''} ${
+                    className={`flex items-center px-2.5 sm:px-3 py-2.5 rounded-lg ${isCollapsed ? 'justify-center' : ''} ${
                       isActive('/') 
                         ? 'bg-blue-500 text-white font-medium shadow-sm' 
                         : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
