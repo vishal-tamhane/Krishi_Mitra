@@ -1,6 +1,24 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMap, faSave, faEraser, faExclamationTriangle, faSeedling } from '@fortawesome/free-solid-svg-icons';
+import { 
+  faMap, 
+  faSave, 
+  faEraser, 
+  faExclamationTriangle, 
+  faSeedling,
+  faLocationDot,
+  faTag,
+  faMapMarkerAlt,
+  faInfoCircle,
+  faEdit,
+  faCheckCircle,
+  faLayerGroup,
+  faRulerCombined,
+  faMapPin,
+  faSpinner,
+  faDrawPolygon,
+  faLandmark
+} from '@fortawesome/free-solid-svg-icons';
 import { createField } from '../../services/dataService';
 import googleMapsLoader from '../../utils/googleMapsLoader';
 import './FieldMapper.css';
@@ -16,6 +34,8 @@ const FieldMapper = () => {
   const [coordinates, setCoordinates] = useState([]);
   const [message, setMessage] = useState({ show: false, text: '', type: 'info' });
   const [loading, setLoading] = useState(false);
+  const [drawingMode, setDrawingMode] = useState(true); // True = Draw Mode, False = Edit Mode
+  const [fieldArea, setFieldArea] = useState(0);
   
   // List of major crops grown in India
   const cropOptions = [
@@ -56,13 +76,64 @@ const FieldMapper = () => {
       return;
     }
     
+    // Custom map style to enhance agricultural features
+    const mapStyle = [
+      {
+        "featureType": "landscape.natural",
+        "elementType": "geometry",
+        "stylers": [
+          {
+            "color": "#dde2e3"
+          },
+          {
+            "visibility": "on"
+          }
+        ]
+      },
+      {
+        "featureType": "poi.park",
+        "elementType": "all",
+        "stylers": [
+          {
+            "color": "#c6e8b3"
+          },
+          {
+            "visibility": "on"
+          }
+        ]
+      },
+      {
+        "featureType": "poi.park",
+        "elementType": "geometry.fill",
+        "stylers": [
+          {
+            "color": "#c6e8b3"
+          },
+          {
+            "visibility": "on"
+          }
+        ]
+      }
+    ];
+    
     const mapInstance = new window.google.maps.Map(mapRef.current, {
       center: { lat: 20.5937, lng: 78.9629 }, // Center on India
-      zoom: 5,
-      mapTypeId: 'hybrid',
-      mapTypeControl: false,
+      zoom: 6,
+      mapTypeId: 'satellite', // Changed to satellite for better field visualization
+      mapTypeControl: true,
+      mapTypeControlOptions: {
+        style: window.google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
+        position: window.google.maps.ControlPosition.TOP_LEFT,
+        mapTypeIds: ['roadmap', 'satellite', 'hybrid', 'terrain']
+      },
       streetViewControl: false,
-      fullscreenControl: false
+      fullscreenControl: true,
+      styles: mapStyle,
+      scaleControl: true,
+      zoomControl: true,
+      zoomControlOptions: {
+        position: window.google.maps.ControlPosition.RIGHT_BOTTOM
+      }
     });
     
     // Check if drawing library is loaded
@@ -121,18 +192,38 @@ const FieldMapper = () => {
     const coords = getPolygonCoordinates(polygon);
     setCoordinates(coords);
     
+    // Calculate field area
+    const area = calculatePolygonArea(coords);
+    setFieldArea(area);
+    
     // Add listener for path changes
+    const updateCoordinatesAndArea = () => {
+      const updatedCoords = getPolygonCoordinates(polygon);
+      setCoordinates(updatedCoords);
+      setFieldArea(calculatePolygonArea(updatedCoords));
+    };
+    
     window.google.maps.event.addListener(
       polygon.getPath(), 
       'set_at', 
-      () => setCoordinates(getPolygonCoordinates(polygon))
+      updateCoordinatesAndArea
     );
     
     window.google.maps.event.addListener(
       polygon.getPath(), 
       'insert_at', 
-      () => setCoordinates(getPolygonCoordinates(polygon))
+      updateCoordinatesAndArea
     );
+    
+    // Display success message
+    setMessage({
+      show: true,
+      text: "Field boundary drawn successfully! Fill in the details and save.",
+      type: 'success'
+    });
+    
+    // Switch to edit mode
+    setDrawingMode(false);
   };
 
   const getPolygonCoordinates = (polygon) => {
@@ -158,19 +249,36 @@ const FieldMapper = () => {
     setFieldName('');
     setFieldLocation('');
     setSelectedCrop('');
+    setFieldArea(0);
     
     if (drawingManager) {
       drawingManager.setDrawingMode(window.google.maps.drawing.OverlayType.POLYGON);
     }
     
+    // Switch back to drawing mode
+    setDrawingMode(true);
+    
     setMessage({
       show: true,
-      text: "Map cleared. You can draw a new field.",
+      text: "Map cleared. Draw a new field boundary.",
       type: 'info'
     });
-    
-    // Auto-hide message after 3 seconds
-    setTimeout(() => setMessage({ show: false, text: '', type: 'info' }), 3000);
+  };
+  
+  // Toggle between draw and edit modes
+  const toggleDrawingMode = () => {
+    if (drawingMode) {
+      // Switching to edit mode
+      if (drawingManager) {
+        drawingManager.setDrawingMode(null);
+      }
+    } else {
+      // Switching to draw mode
+      if (drawingManager) {
+        drawingManager.setDrawingMode(window.google.maps.drawing.OverlayType.POLYGON);
+      }
+    }
+    setDrawingMode(!drawingMode);
   };
 
   const handleSaveField = async () => {
@@ -252,12 +360,27 @@ const FieldMapper = () => {
       
       setMessage({
         show: true,
-        text: `Field "${fieldName}" saved successfully!`,
+        text: `Field "${fieldName}" saved successfully! Your farm plot has been added to the database.`,
         type: 'success'
       });
       
-      // Clear form after successful save
-      handleClearAll();
+      // Clear form after successful save but keep the success message visible
+      if (currentPolygon) {
+        currentPolygon.setMap(null);
+        setCurrentPolygon(null);
+      }
+      
+      setCoordinates([]);
+      setFieldName('');
+      setFieldLocation('');
+      setSelectedCrop('');
+      setFieldArea(0);
+      
+      // Switch back to drawing mode
+      if (drawingManager) {
+        drawingManager.setDrawingMode(window.google.maps.drawing.OverlayType.POLYGON);
+      }
+      setDrawingMode(true);
       
     } catch (error) {
       console.error('Error saving field:', error);
@@ -275,108 +398,22 @@ const FieldMapper = () => {
     <div className="field-mapper">
       <div className="field-mapper-header">
         <h2>
-          <FontAwesomeIcon icon={faMap} className="mr-2" />
-          Plot New Field
+          <FontAwesomeIcon icon={faDrawPolygon} className="mr-2" />
+          Create Farm Plot
         </h2>
-        <p>Draw a polygon on the map to mark a new field and save it with a unique name.</p>
+        <p>Draw your field boundaries on the map and add crop information for better farm management and analytics.</p>
       </div>
       
       <div className="field-mapper-container">
-        <div 
-          ref={mapRef} 
-          className="map-container"
-          style={{ height: '500px', width: '100%' }}
-        ></div>
-        
-        <div className="field-details">
-          <h3>Field Details</h3>
-          
-          <div className="field-form">
-            <div className="form-group">
-              <label htmlFor="fieldNameInput">Field Name</label>
-              <input 
-                type="text" 
-                id="fieldNameInput" 
-                className="form-control"
-                placeholder="Enter Field Name"
-                value={fieldName}
-                onChange={(e) => setFieldName(e.target.value)}
-                disabled={loading}
-              />
-            </div>
-            
-            <div className="form-group">
-              <label htmlFor="fieldLocation">Location</label>
-              <input 
-                type="text" 
-                id="fieldLocation" 
-                className="form-control"
-                placeholder="Field Location"
-                value={fieldLocation}
-                onChange={(e) => setFieldLocation(e.target.value)}
-                disabled={loading}
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="cropSelect" className="flex items-center">
-                <FontAwesomeIcon icon={faSeedling} className="mr-2 text-green-600" />
-                Select Crop
-              </label>
-              <select
-                id="cropSelect"
-                className="form-control"
-                value={selectedCrop}
-                onChange={(e) => setSelectedCrop(e.target.value)}
-                disabled={loading}
-              >
-                <option value="">-- Select Crop --</option>
-                {cropOptions.map((crop) => (
-                  <option key={crop} value={crop}>
-                    {crop}
-                  </option>
-                ))}
-              </select>
-              <div className="text-xs text-gray-500 mt-1">
-                Select the crop you are planning to grow in this field
-              </div>
-            </div>
-          </div>
-          
-          {coordinates.length > 0 && (
-            <div className="coordinates-table">
-              <h4>Coordinates</h4>
-              <div className="table-responsive">
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>Point</th>
-                      <th>Latitude</th>
-                      <th>Longitude</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {coordinates.map((point, index) => (
-                      <tr key={index}>
-                        <td>{index + 1}</td>
-                        <td>{point.lat.toFixed(6)}</td>
-                        <td>{point.lng.toFixed(6)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-          
-          <div className="button-group">
+        <div className="map-section">
+          <div className="action-buttons">
             <button 
-              className="btn btn-save" 
-              onClick={handleSaveField}
-              disabled={loading}
+              className={`btn ${drawingMode ? 'btn-save' : 'btn-secondary'}`}
+              onClick={toggleDrawingMode}
+              disabled={loading || !currentPolygon}
             >
-              <FontAwesomeIcon icon={faSave} className="mr-2" />
-              {loading ? 'Saving...' : 'Save'}
+              <FontAwesomeIcon icon={drawingMode ? faEdit : faMapPin} />
+              {drawingMode ? 'Edit Mode' : 'Draw Mode'}
             </button>
             
             <button 
@@ -384,17 +421,214 @@ const FieldMapper = () => {
               onClick={handleClearAll}
               disabled={loading}
             >
-              <FontAwesomeIcon icon={faEraser} className="mr-2" />
-              Clear
+              <FontAwesomeIcon icon={faEraser} />
+              Clear All
             </button>
           </div>
+          
+          <div className="map-wrapper">
+            <div 
+              ref={mapRef} 
+              className="map-container"
+            ></div>
+            
+            <div className="mode-indicator">
+              <FontAwesomeIcon icon={drawingMode ? faMapPin : faEdit} />
+              {drawingMode ? 'Drawing Mode' : 'Edit Mode'}
+            </div>
+            
+            <div className="map-instructions">
+              <FontAwesomeIcon icon={faInfoCircle} />
+              {drawingMode 
+                ? 'Click on the map to add points and create a polygon. Complete the shape by connecting to the first point.' 
+                : 'Drag the points to adjust the field boundary. Add new points by clicking on the boundary lines.'}
+            </div>
+          </div>
+          
+          {coordinates.length > 0 && fieldArea > 0 && (
+            <div className="field-summary">
+              <div className="field-summary-item">
+                <span className="field-summary-label">
+                  <FontAwesomeIcon icon={faMapMarkerAlt} /> Points:
+                </span>
+                <span className="field-summary-value">{coordinates.length}</span>
+              </div>
+              <div className="field-summary-item">
+                <span className="field-summary-label">
+                  <FontAwesomeIcon icon={faRulerCombined} /> Area:
+                </span>
+                <span className="field-summary-value">
+                  {fieldArea.toFixed(2)} hectares
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+        
+        <div className="field-mapper-sidebar">
+          <div className="field-details field-info-card">
+            <div className="field-info-header">
+              <FontAwesomeIcon icon={faInfoCircle} className="field-info-icon" />
+              <h3>Field Information</h3>
+            </div>
+            
+            <div className="field-form">
+              <div className="form-group required form-group-animated">
+                <label htmlFor="fieldNameInput">
+                  <FontAwesomeIcon icon={faTag} />
+                  Field Name <span className="required-star">*</span>
+                </label>
+                <input 
+                  type="text" 
+                  id="fieldNameInput" 
+                  className={`form-control ${loading ? 'form-loading' : ''}`}
+                  placeholder="Enter Field Name (e.g. North Plot)"
+                  value={fieldName}
+                  onChange={(e) => setFieldName(e.target.value)}
+                  disabled={loading}
+                />
+                <div className="form-help-text">
+                  Give your field a unique, recognizable name
+                </div>
+              </div>
+              
+              <div className="form-group required form-group-animated">
+                <label htmlFor="fieldLocation">
+                  <FontAwesomeIcon icon={faLocationDot} />
+                  Location <span className="required-star">*</span>
+                </label>
+                <div className="input-with-icon">
+                  <input 
+                    type="text" 
+                    id="fieldLocation" 
+                    className={`form-control ${loading ? 'form-loading' : ''}`}
+                    placeholder="Field Location (e.g. Nashik, Maharashtra)"
+                    value={fieldLocation}
+                    onChange={(e) => setFieldLocation(e.target.value)}
+                    disabled={loading}
+                  />
+                  <FontAwesomeIcon icon={faMapMarkerAlt} className="input-icon" />
+                </div>
+                <div className="form-help-text">
+                  Enter a descriptive location for your field
+                </div>
+              </div>
+
+              <div className="form-group required form-group-animated">
+                <label htmlFor="cropSelect">
+                  <FontAwesomeIcon icon={faSeedling} />
+                  Select Crop <span className="required-star">*</span>
+                </label>
+                <div className="custom-select-wrapper">
+                  <select
+                    id="cropSelect"
+                    className={`form-control custom-select ${loading ? 'form-loading' : ''}`}
+                    value={selectedCrop}
+                    onChange={(e) => setSelectedCrop(e.target.value)}
+                    disabled={loading}
+                  >
+                    <option value="">-- Select Crop --</option>
+                    {cropOptions.map((crop) => (
+                      <option key={crop} value={crop}>
+                        {crop}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-help-text">
+                  Select the crop you are planning to grow in this field
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {coordinates.length > 0 && (
+            <div className="field-details">
+              <h3>
+                <FontAwesomeIcon icon={faLayerGroup} />
+                Field Boundary
+              </h3>
+              
+              <div className="field-summary">
+                <div className="field-summary-item">
+                  <span className="field-summary-label">
+                    <FontAwesomeIcon icon={faMapMarkerAlt} /> Boundary Points
+                  </span>
+                  <span className="field-summary-value">{coordinates.length}</span>
+                </div>
+                <div className="field-summary-item">
+                  <span className="field-summary-label">
+                    <FontAwesomeIcon icon={faRulerCombined} /> Field Area
+                  </span>
+                  <span className="field-summary-value">
+                    {fieldArea.toFixed(2)} ha
+                  </span>
+                </div>
+              </div>
+              
+              <div className="coordinates-table">
+                <h4>
+                  <FontAwesomeIcon icon={faMapPin} />
+                  GPS Coordinates
+                </h4>
+                <div className="table-responsive">
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th>Point</th>
+                        <th>Latitude</th>
+                        <th>Longitude</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {coordinates.map((point, index) => (
+                        <tr key={index}>
+                          <td>{index + 1}</td>
+                          <td>{point.lat.toFixed(6)}</td>
+                          <td>{point.lng.toFixed(6)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              
+              <div className="sticky-action-bar">
+                <div className="button-group button-group-spaced">
+                  <button 
+                    className="btn btn-save btn-animated" 
+                    onClick={handleSaveField}
+                    disabled={loading || coordinates.length < 3 || !fieldName || !selectedCrop}
+                  >
+                    <FontAwesomeIcon icon={loading ? faSpinner : faSave} className={loading ? 'fa-spin' : ''} />
+                    {loading ? 'Saving...' : 'Save Field'}
+                  </button>
+                  
+                  <button 
+                    className="btn btn-clear" 
+                    onClick={handleClearAll}
+                    disabled={loading}
+                  >
+                    <FontAwesomeIcon icon={faEraser} />
+                    Clear
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
       
       {message.show && (
         <div className={`alert alert-${message.type}`}>
           {message.type === 'error' && (
-            <FontAwesomeIcon icon={faExclamationTriangle} className="mr-2" />
+            <FontAwesomeIcon icon={faExclamationTriangle} />
+          )}
+          {message.type === 'success' && (
+            <FontAwesomeIcon icon={faCheckCircle} />
+          )}
+          {message.type === 'info' && (
+            <FontAwesomeIcon icon={faInfoCircle} />
           )}
           {message.text}
           <button 
