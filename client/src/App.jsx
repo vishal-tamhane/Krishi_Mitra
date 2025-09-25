@@ -14,6 +14,7 @@ import PlantDiseaseDetection from './pages/PlantDiseaseDetection';
 import CropLifecycle from './pages/CropLifecycle';
 import CropPrediction from './pages/CropPrediction';
 import YieldPrediction from './pages/YieldPrediction';
+import IrrigationManagement from './pages/IrrigationManagement';
 import { AppProvider } from './context/AppContext';
 import VegetationAnalysis from './components/climate/VegetationAnalysis'
 import SoilLandAnalysis from './components/climate/SoilLandAnalysis'
@@ -42,6 +43,7 @@ function App() {
             <Route path="/crop-lifecycle" element={<CropLifecycle />} />
             <Route path="/crop-prediction" element={<CropPrediction />} />
             <Route path="/yield-prediction" element={<YieldPrediction />} />
+            <Route path="/irrigation-management" element={<IrrigationManagement />} />
             <Route path="*" element={<h1>Page Not Found</h1>} />
           </Routes>
         </Layout>

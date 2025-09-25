@@ -298,6 +298,22 @@ useEffect(() => {
                     {!isCollapsed && <span className="ml-2 md:ml-3 whitespace-nowrap text-sm md:text-base">Yield Prediction</span>}
                   </Link>
                 </li>
+                <li>
+                  <Link
+                    to="/irrigation-management"
+                    className={`flex items-center px-2 md:px-3 py-2 md:py-2.5 rounded-lg ${isCollapsed ? 'justify-center' : ''} ${
+                      isActive('/irrigation-management') 
+                        ? 'bg-blue-500 text-white font-medium shadow-sm' 
+                        : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
+                    } group transition-all duration-200 touch-manipulation`}
+                  >
+                    <FontAwesomeIcon
+                      icon={faDroplet}
+                      className={`w-4 h-4 md:w-5 md:h-5 ${isActive('/irrigation-management') ? 'text-white' : 'text-gray-500 group-hover:text-blue-600'}`}
+                    />
+                    {!isCollapsed && <span className="ml-2 md:ml-3 whitespace-nowrap text-sm md:text-base">Irrigation Management</span>}
+                  </Link>
+                </li>
               </ul>
             </div>
 

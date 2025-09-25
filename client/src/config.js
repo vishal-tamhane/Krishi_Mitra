@@ -57,8 +57,16 @@ export const API_URLS = {
   DISEASE_IMAGE_RESULT: (imagePath) => `${FLASK_BACKEND_URL}${imagePath}`
 };
 
+// Groq API Configuration for AI Assistant
+export const GROQ_CONFIG = {
+  API_KEY: import.meta.env.VITE_GROQ_API_KEY,
+  API_URL: import.meta.env.VITE_GROQ_API_URL || 'https://api.groq.com/openai/v1/chat/completions',
+  MODEL: 'llama3-8b-8192' // Default model, can be changed as needed
+};
+
 export default {
   FLASK_BACKEND_URL,
   CLIENT_URL,
-  API_URLS
+  API_URLS,
+  GROQ_CONFIG
 };
