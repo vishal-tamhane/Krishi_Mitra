@@ -206,22 +206,39 @@ useEffect(() => {
                 </h3>
               )}
               <ul className="space-y-1">
-                <li>
-                  <Link
-                    to="/create-field"
-                    className={`flex items-center px-2 md:px-3 py-2 rounded-lg ${isCollapsed ? 'justify-center' : ''} ${
-                      isActive('/create-field') 
-                        ? 'bg-blue-500 text-white font-medium shadow-sm' 
-                        : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
-                    } group transition-all duration-200 touch-manipulation`}
-                  >
-                    <FontAwesomeIcon
-                      icon={faDraftingCompass}
-                      className={`w-4 h-4 md:w-5 md:h-5 ${isActive('/create-field') ? 'text-white' : 'text-gray-500 group-hover:text-blue-600'}`}
-                    />
-                    {!isCollapsed && <span className="ml-2 md:ml-3 whitespace-nowrap text-sm md:text-base">Create New Field</span>}
-                  </Link>
-                </li>
+                
+              <li>
+                        <Link
+                          to="/create-field"
+                          className={`flex items-center px-3 py-2 rounded-md ${
+                            isActive('/create-field') 
+                              ? 'bg-blue-500 text-white font-medium' 
+                              : 'text-gray-600 hover:text-blue-700 hover:bg-blue-50'
+                          } transition-all duration-200`}
+                        >
+                          <FontAwesomeIcon
+                            icon={faDraftingCompass}
+                            className={`w-4 h-4 mr-2 ${isActive('/create-field') ? 'text-white' : 'text-gray-500'}`}
+                          />
+                          <span>Create New Field</span>
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          to="/fields"
+                          className={`flex items-center px-3 py-2 rounded-md ${
+                            isActive('/fields') 
+                              ? 'bg-blue-500 text-white font-medium' 
+                              : 'text-gray-600 hover:text-blue-700 hover:bg-blue-50'
+                          } transition-all duration-200`}
+                        >
+                          <FontAwesomeIcon
+                            icon={faMap}
+                            className={`w-4 h-4 mr-2 ${isActive('/fields') ? 'text-white' : 'text-gray-500'}`}
+                          />
+                          <span>Manage Fields</span>
+                        </Link>
+                      </li>
               </ul>
             </div>
 

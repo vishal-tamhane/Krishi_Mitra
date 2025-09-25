@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMap, faEdit, faTrash, faSearch, faExclamationTriangle, faSpinner, faTimes, faSeedling } from '@fortawesome/free-solid-svg-icons';
-import { API_URLS } from '../config';
+import { getUserFields, deleteField } from '../services/dataService';
 import '../components/fields/Fields.css';
 
 const Fields = () => {
@@ -25,22 +25,37 @@ const Fields = () => {
     setError(null);
 
     try {
-      const response = await fetch(API_URLS.FIELDS);
+      const result = await getUserFields();
       
-      if (!response.ok) {
-        throw new Error(`Failed to fetch fields: ${response.status} ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      if (result.success && Array.isArray(result.fields)) {
-        setFields(result.fields);
+      // Check if the response is successful and contains data
+      if (result.success && Array.isArray(result.data)) {
+        // Map the MongoDB field data to the expected format
+        const mappedFields = result.data.map(field => ({
+          id: field._id,
+          name: field.field_name,
+          location: field.field_name, // Using field_name as location since we don't have separate location field
+          crop: field.current_crop || 'Not specified',
+          area: field.area || 0,
+          soilType: field.soil_type || 'Unknown',
+          createdAt: field.created_at,
+          coordinates: field.coordinates || [],
+          soilParameters: field.soil_parameters || {},
+          weatherData: field.weather_data || {},
+          status: field.status || 'active'
+        }));
+        setFields(mappedFields);
       } else {
+        // If no data or unsuccessful response, show empty fields list
         setFields([]);
-        setError('No fields found or invalid server response');
+        if (!result.success) {
+          setError(result.error || 'Failed to load fields from database');
+        }
       }
     } catch (error) {
       console.error('Error fetching fields:', error);
-      setError(`Failed to load fields: ${error.message}`);
+      // Set empty array instead of dummy data when there's an error
+      setFields([]);
+      setError(`Failed to connect to server: ${error.message}. Please check if the Flask server is running.`);
     } finally {
       setLoading(false);
     }
@@ -50,19 +65,20 @@ const Fields = () => {
     if (!fieldId) return;
     
     try {
-      const response = await fetch(`${API_URLS.FIELDS}/${fieldId}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to delete field: ${response.status} ${response.statusText}`);
-      }
-
-      // Remove the deleted field from the state
-      setFields(fields.filter(field => field.id !== fieldId));
+      const result = await deleteField(fieldId);
       
-      // Clear delete confirmation
-      setDeleteConfirm(null);
+      if (result.success) {
+        // Remove the deleted field from the state
+        setFields(fields.filter(field => field.id !== fieldId));
+        
+        // Clear delete confirmation
+        setDeleteConfirm(null);
+        
+        // Show success message (optional)
+        console.log('Field deleted successfully:', result.message);
+      } else {
+        throw new Error(result.error || 'Failed to delete field');
+      }
     } catch (error) {
       console.error('Error deleting field:', error);
       setError(`Failed to delete field: ${error.message}`);
@@ -88,8 +104,8 @@ const Fields = () => {
   // Filter fields based on search term
   const filteredFields = fields.filter(field => 
     field.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    field.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (field.crop && field.crop.toLowerCase().includes(searchTerm.toLowerCase()))
+    (field.soilType && field.soilType.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (field.status && field.status.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   // Sort fields based on sortConfig
@@ -116,10 +132,10 @@ const Fields = () => {
         <div>
           <h1 className="text-2xl font-bold text-gray-800 flex items-center">
             <FontAwesomeIcon icon={faMap} className="mr-3 text-green-600" />
-            My Fields
+            Manage Fields
           </h1>
           <p className="text-gray-600 mt-1">
-            Manage all your field boundaries and details
+            View and manage your field maps stored in the database
           </p>
         </div>
         <Link 
@@ -192,17 +208,17 @@ const Fields = () => {
                     <th className="px-6 py-3 border-b border-gray-200 text-gray-500 font-medium text-sm tracking-wider cursor-pointer" onClick={() => handleSort('name')}>
                       Field Name {getSortIcon('name')}
                     </th>
-                    <th className="px-6 py-3 border-b border-gray-200 text-gray-500 font-medium text-sm tracking-wider cursor-pointer" onClick={() => handleSort('location')}>
-                      Location {getSortIcon('location')}
+                    <th className="px-6 py-3 border-b border-gray-200 text-gray-500 font-medium text-sm tracking-wider cursor-pointer" onClick={() => handleSort('soilType')}>
+                      Soil Type {getSortIcon('soilType')}
                     </th>
-                    <th className="px-6 py-3 border-b border-gray-200 text-gray-500 font-medium text-sm tracking-wider cursor-pointer" onClick={() => handleSort('crop')}>
-                      Crop {getSortIcon('crop')}
+                    <th className="px-6 py-3 border-b border-gray-200 text-gray-500 font-medium text-sm tracking-wider cursor-pointer" onClick={() => handleSort('area')}>
+                      Area (ha) {getSortIcon('area')}
                     </th>
                     <th className="px-6 py-3 border-b border-gray-200 text-gray-500 font-medium text-sm tracking-wider cursor-pointer" onClick={() => handleSort('createdAt')}>
                       Created Date {getSortIcon('createdAt')}
                     </th>
                     <th className="px-6 py-3 border-b border-gray-200 text-gray-500 font-medium text-sm tracking-wider">
-                      Area
+                      Status
                     </th>
                     <th className="px-6 py-3 border-b border-gray-200 text-gray-500 font-medium text-sm tracking-wider text-right">
                       Actions
@@ -216,16 +232,20 @@ const Fields = () => {
                         <div className="font-medium text-gray-900">{field.name}</div>
                       </td>
                       <td className="px-6 py-4 border-b border-gray-200 text-gray-500">
-                        {field.location}
+                        {field.soilType || 'Unknown'}
                       </td>
                       <td className="px-6 py-4 border-b border-gray-200 text-gray-500">
-                        {field.crop || 'Not specified'}
+                        {field.area ? field.area.toFixed(2) : 'N/A'}
                       </td>
                       <td className="px-6 py-4 border-b border-gray-200 text-gray-500">
-                        {new Date(field.createdAt).toLocaleDateString()}
+                        {field.createdAt ? new Date(field.createdAt).toLocaleDateString() : 'Unknown'}
                       </td>
-                      <td className="px-6 py-4 border-b border-gray-200 text-gray-500">
-                        {field.coordinates ? `${calculateFieldArea(field.coordinates).toFixed(2)} ha` : 'N/A'}
+                      <td className="px-6 py-4 border-b border-gray-200">
+                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                          field.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {field.status === 'active' ? 'Active' : field.status || 'Unknown'}
+                        </span>
                       </td>
                       <td className="px-6 py-4 border-b border-gray-200 text-right">
                         <div className="flex justify-end space-x-2">

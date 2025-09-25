@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faSeedling, 
@@ -11,24 +11,66 @@ import {
   faThermometerHalf,
   faDroplet,
   faEye,
-  faPlus
+  faPlus,
+  faSpinner,
+  faExclamationTriangle
 } from '@fortawesome/free-solid-svg-icons';
 import { API_URLS } from '../config.js';
+import { getUserFields } from '../services/dataService';
 
 const CropLifecycle = () => {
-  const [selectedField, setSelectedField] = useState('north-field');
+  const [selectedField, setSelectedField] = useState('');
   const [showPredictionForm, setShowPredictionForm] = useState(false);
   const [cropName, setCropName] = useState('');
   const [sowingDate, setSowingDate] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [predictionResult, setPredictionResult] = useState(null);
   const [error, setError] = useState('');
+  const [fields, setFields] = useState([]);
+  const [fieldsLoading, setFieldsLoading] = useState(true);
   
-  const fields = [
-    { id: 'north-field', name: 'North Field', crop: 'Wheat', area: '5.2 acres' },
-    { id: 'south-field', name: 'South Field', crop: 'Rice', area: '3.8 acres' },
-    { id: 'east-field', name: 'East Field', crop: 'Corn', area: '4.5 acres' }
-  ];
+  // Load fields from database on component mount
+  useEffect(() => {
+    fetchFields();
+  }, []);
+  
+  const fetchFields = async () => {
+    setFieldsLoading(true);
+    setError('');
+    
+    try {
+      const response = await getUserFields();
+      
+      if (response.success && Array.isArray(response.data)) {
+        // Map database fields to the format expected by this component
+        const mappedFields = response.data.map(field => ({
+          id: field._id,
+          name: field.field_name,
+          crop: field.current_crop || 'Not specified',
+          area: field.area ? `${field.area} hectares` : 'Unknown area'
+        }));
+        setFields(mappedFields);
+        
+        // Select first field by default if available
+        if (mappedFields.length > 0 && !selectedField) {
+          setSelectedField(mappedFields[0].id);
+        }
+      } else {
+        setFields([]);
+        if (!response.success) {
+          setError('Failed to load fields from database');
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching fields:', error);
+      setFields([]);
+      setError('Unable to connect to server. Please check if the Flask server is running.');
+    } finally {
+      setFieldsLoading(false);
+    }
+  };
+  
+
 
   const lifecycleStages = [
     {
@@ -192,6 +234,38 @@ const CropLifecycle = () => {
       </div>
 
       <div className="px-6 space-y-6">
+        {/* Loading State */}
+        {fieldsLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <FontAwesomeIcon icon={faSpinner} className="text-2xl text-green-600 animate-spin mr-3" />
+            <span className="text-lg text-gray-600">Loading fields...</span>
+          </div>
+        ) : error ? (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+            <FontAwesomeIcon icon={faExclamationTriangle} className="text-3xl text-red-600 mb-3" />
+            <h3 className="text-lg font-semibold text-red-800 mb-2">Unable to Load Fields</h3>
+            <p className="text-red-600 mb-4">{error}</p>
+            <button
+              onClick={fetchFields}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              Retry
+            </button>
+          </div>
+        ) : fields.length === 0 ? (
+          <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+            <FontAwesomeIcon icon={faSeedling} className="text-4xl text-gray-400 mb-3" />
+            <h3 className="text-xl font-semibold text-gray-700">No fields available</h3>
+            <p className="text-gray-600 mb-4">Create some fields first to track crop lifecycle</p>
+            <a
+              href="/create-field"
+              className="inline-block bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-colors"
+            >
+              Create your first field
+            </a>
+          </div>
+        ) : (
+        <>
         {/* Field Overview */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Field Information</h2>
@@ -517,6 +591,8 @@ const CropLifecycle = () => {
             </div>
           </div>
         </div>
+        </>
+        )}
       </div>
     </div>
   );
