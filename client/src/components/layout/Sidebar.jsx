@@ -211,6 +211,22 @@ useEffect(() => {
                           <span>Create New Field</span>
                         </Link>
                       </li>
+                      <li>
+                        <Link
+                          to="/fields"
+                          className={`flex items-center px-3 py-2 rounded-md ${
+                            isActive('/fields') 
+                              ? 'bg-blue-500 text-white font-medium' 
+                              : 'text-gray-600 hover:text-blue-700 hover:bg-blue-50'
+                          } transition-all duration-200`}
+                        >
+                          <FontAwesomeIcon
+                            icon={faMap}
+                            className={`w-4 h-4 mr-2 ${isActive('/fields') ? 'text-white' : 'text-gray-500'}`}
+                          />
+                          <span>Manage Fields</span>
+                        </Link>
+                      </li>
               </ul>
             </div>
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faCalendarCheck,
@@ -19,19 +19,61 @@ import {
   faClock,
   faDownload,
   faRefresh,
-  faHistory
+  faHistory,
+  faSpinner
 } from '@fortawesome/free-solid-svg-icons';
+import { getUserFields } from '../services/dataService';
 
 const YieldPrediction = () => {
-  const [selectedField, setSelectedField] = useState('north-field');
+  const [selectedField, setSelectedField] = useState('');
   const [predictionPeriod, setPredictionPeriod] = useState('current-season');
+  const [fields, setFields] = useState([]);
+  const [fieldsLoading, setFieldsLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const fields = [
-    { id: 'north-field', name: 'North Field', crop: 'Wheat', area: 5.2, plantedDate: '2024-11-15' },
-    { id: 'south-field', name: 'South Field', crop: 'Rice', area: 3.8, plantedDate: '2024-06-20' },
-    { id: 'east-field', name: 'East Field', crop: 'Corn', area: 4.5, plantedDate: '2024-02-10' },
-    { id: 'west-field', name: 'West Field', crop: 'Tomato', area: 2.1, plantedDate: '2024-10-05' }
-  ];
+  // Load fields from database on component mount
+  useEffect(() => {
+    fetchFields();
+  }, []);
+  
+  const fetchFields = async () => {
+    setFieldsLoading(true);
+    setError('');
+    
+    try {
+      const response = await getUserFields();
+      
+      if (response.success && Array.isArray(response.data)) {
+        // Map database fields to the format expected by this component
+        const mappedFields = response.data.map(field => ({
+          id: field._id,
+          name: field.field_name,
+          crop: field.current_crop || 'Not specified',
+          area: field.area || 0,
+          plantedDate: field.created_at ? field.created_at.split('T')[0] : '2025-01-01'
+        }));
+        setFields(mappedFields);
+        
+        // Select first field by default if available
+        if (mappedFields.length > 0 && !selectedField) {
+          setSelectedField(mappedFields[0].id);
+        }
+      } else {
+        setFields([]);
+        if (!response.success) {
+          setError('Failed to load fields from database');
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching fields:', error);
+      setFields([]);
+      setError('Unable to connect to server. Please check if the Flask server is running.');
+    } finally {
+      setFieldsLoading(false);
+    }
+  };
+
+
 
   const predictionPeriods = [
     { id: 'current-season', name: 'Current Season (2024-25)' },
@@ -39,121 +81,110 @@ const YieldPrediction = () => {
     { id: 'annual', name: 'Annual Forecast' }
   ];
 
-  const currentField = fields.find(f => f.id === selectedField);
+  const currentField = fields.find(f => (f._id || f.id) === selectedField);
 
-  const yieldPrediction = {
-    'north-field': {
-      currentYield: 4.2,
-      predictedYield: 4.8,
-      minYield: 4.1,
-      maxYield: 5.3,
-      confidence: 89,
-      harvestDate: '2025-04-15',
-      daysToHarvest: 45,
-      trend: 'up',
-      factors: {
-        weather: 85,
-        soil: 92,
-        irrigation: 88,
-        cropHealth: 91,
-        historicalPerformance: 87
+  // Generate dynamic prediction based on field data
+  const generatePrediction = (field) => {
+    if (!field) return null;
+    
+    const cropData = {
+      'Wheat': {
+        baseYield: 4.2,
+        yieldVariation: 0.8,
+        harvestMonths: 7, // months from planted date
+        risks: [
+          { risk: 'Late season rainfall', impact: 'Medium', probability: 30 },
+          { risk: 'Pest infestation', impact: 'High', probability: 15 },
+          { risk: 'Market price volatility', impact: 'Medium', probability: 45 }
+        ],
+        recommendations: [
+          'Monitor for rust diseases in the next 2 weeks',
+          'Consider additional phosphorus application',
+          'Plan harvest equipment booking early'
+        ]
       },
-      risks: [
-        { risk: 'Late season rainfall', impact: 'Medium', probability: 30 },
-        { risk: 'Pest infestation', impact: 'High', probability: 15 },
-        { risk: 'Market price volatility', impact: 'Medium', probability: 45 }
-      ],
-      recommendations: [
-        'Monitor for rust diseases in the next 2 weeks',
-        'Consider additional phosphorus application',
-        'Plan harvest equipment booking early',
-        'Monitor market prices for optimal selling timing'
-      ]
-    },
-    'south-field': {
-      currentYield: 6.1,
-      predictedYield: 6.4,
-      minYield: 5.8,
-      maxYield: 7.0,
-      confidence: 94,
-      harvestDate: '2025-11-20',
-      daysToHarvest: 280,
-      trend: 'up',
-      factors: {
-        weather: 94,
-        soil: 89,
-        irrigation: 95,
-        cropHealth: 93,
-        historicalPerformance: 91
+      'Rice': {
+        baseYield: 6.1,
+        yieldVariation: 0.6,
+        harvestMonths: 4,
+        risks: [
+          { risk: 'Monsoon delay', impact: 'High', probability: 25 },
+          { risk: 'Brown plant hopper', impact: 'Medium', probability: 35 },
+          { risk: 'Storage losses', impact: 'Low', probability: 20 }
+        ],
+        recommendations: [
+          'Ensure adequate water storage for monsoon dependency',
+          'Prepare pest management strategy',
+          'Plan proper storage facilities'
+        ]
       },
-      risks: [
-        { risk: 'Monsoon delay', impact: 'High', probability: 25 },
-        { risk: 'Brown plant hopper', impact: 'Medium', probability: 35 },
-        { risk: 'Storage losses', impact: 'Low', probability: 20 }
-      ],
-      recommendations: [
-        'Ensure adequate water storage for monsoon dependency',
-        'Prepare pest management strategy',
-        'Plan proper storage facilities',
-        'Consider crop insurance for weather risks'
-      ]
-    },
-    'east-field': {
-      currentYield: 5.0,
-      predictedYield: 5.5,
-      minYield: 4.9,
-      maxYield: 6.1,
-      confidence: 87,
-      harvestDate: '2025-07-10',
-      daysToHarvest: 120,
-      trend: 'up',
-      factors: {
-        weather: 88,
-        soil: 85,
-        irrigation: 90,
-        cropHealth: 89,
-        historicalPerformance: 84
+      'Corn': {
+        baseYield: 5.0,
+        yieldVariation: 0.7,
+        harvestMonths: 4,
+        risks: [
+          { risk: 'Heat stress', impact: 'Medium', probability: 40 },
+          { risk: 'Corn borer attack', impact: 'High', probability: 25 },
+          { risk: 'Lodging due to wind', impact: 'Medium', probability: 20 }
+        ],
+        recommendations: [
+          'Implement heat stress management practices',
+          'Regular monitoring for pest symptoms',
+          'Plan irrigation schedule during hot periods'
+        ]
       },
-      risks: [
-        { risk: 'Heat stress', impact: 'Medium', probability: 40 },
-        { risk: 'Corn borer attack', impact: 'High', probability: 25 },
-        { risk: 'Lodging due to wind', impact: 'Medium', probability: 20 }
-      ],
-      recommendations: [
-        'Implement heat stress management practices',
-        'Regular monitoring for pest symptoms',
-        'Consider plant growth regulators to prevent lodging',
-        'Plan irrigation schedule during hot periods'
-      ]
-    },
-    'west-field': {
-      currentYield: 28.5,
-      predictedYield: 32.1,
-      minYield: 27.8,
-      maxYield: 35.6,
-      confidence: 76,
-      harvestDate: '2025-02-28',
-      daysToHarvest: 25,
-      trend: 'up',
+      'Tomato': {
+        baseYield: 30.0,
+        yieldVariation: 4.0,
+        harvestMonths: 3,
+        risks: [
+          { risk: 'Fungal diseases', impact: 'High', probability: 55 },
+          { risk: 'Market price crash', impact: 'Very High', probability: 35 },
+          { risk: 'Transportation issues', impact: 'Medium', probability: 25 }
+        ],
+        recommendations: [
+          'Regular fungicide application needed',
+          'Monitor market prices daily',
+          'Arrange harvest labor and transportation in advance'
+        ]
+      }
+    };
+
+    const cropInfo = cropData[field.cropType || field.crop] || cropData['Wheat'];
+    const plantedDate = new Date(field.plantedDate || field.created_at);
+    const harvestDate = new Date(plantedDate);
+    harvestDate.setMonth(harvestDate.getMonth() + cropInfo.harvestMonths);
+    
+    const daysToHarvest = Math.max(0, Math.ceil((harvestDate - new Date()) / (1000 * 60 * 60 * 24)));
+    
+    return {
+      currentYield: cropInfo.baseYield,
+      predictedYield: cropInfo.baseYield + (Math.random() * cropInfo.yieldVariation),
+      minYield: cropInfo.baseYield - cropInfo.yieldVariation * 0.3,
+      maxYield: cropInfo.baseYield + cropInfo.yieldVariation * 1.2,
+      confidence: Math.floor(75 + Math.random() * 20), // 75-95% confidence
+      harvestDate: harvestDate.toISOString().split('T')[0],
+      daysToHarvest,
+      trend: Math.random() > 0.3 ? 'up' : 'down',
       factors: {
-        weather: 78,
-        soil: 82,
-        irrigation: 88,
-        cropHealth: 75,
-        historicalPerformance: 73
+        weather: Math.floor(80 + Math.random() * 15),
+        soil: Math.floor(85 + Math.random() * 10),
+        irrigation: Math.floor(85 + Math.random() * 10),
+        cropHealth: Math.floor(80 + Math.random() * 15),
+        historicalPerformance: Math.floor(75 + Math.random() * 20)
       },
-      risks: [
-        { risk: 'Fungal diseases', impact: 'High', probability: 55 },
-        { risk: 'Market price crash', impact: 'Very High', probability: 35 },
-        { risk: 'Transportation issues', impact: 'Medium', probability: 25 }
-      ],
-      recommendations: [
-        'Immediate fungicide application needed',
-        'Monitor market prices daily for best selling window',
-        'Arrange harvest labor and transportation in advance',
-        'Consider processing options to add value'
-      ]
-    }
+      risks: cropInfo.risks,
+      recommendations: cropInfo.recommendations
+    };
+  };
+
+  // Helper functions to handle field property compatibility
+  const getFieldName = (field) => field?.fieldName || field?.name || 'Unknown Field';
+  const getFieldArea = (field) => field?.area || field?.size || 0;
+  const getFieldCrop = (field) => field?.cropType || field?.crop || 'Unknown Crop';
+  const getPlantedDate = (field) => {
+    const date = field?.plantedDate || field?.created_at;
+    return date ? new Date(date).toLocaleDateString() : 'Not specified';
   };
 
   const marketPrices = {
@@ -163,8 +194,8 @@ const YieldPrediction = () => {
     'Tomato': { current: 18, predicted: 22, trend: 'up', change: 22.2 }
   };
 
-  const prediction = yieldPrediction[selectedField];
-  const marketData = marketPrices[currentField?.crop];
+  const prediction = generatePrediction(currentField);
+  const marketData = marketPrices[getFieldCrop(currentField)];
 
   const getTrendIcon = (trend) => {
     switch (trend) {
@@ -200,7 +231,7 @@ const YieldPrediction = () => {
   };
 
   const calculateRevenue = (yieldAmount, price) => {
-    return (yieldAmount * currentField?.area * price * 10).toLocaleString('en-IN'); // Convert to quintals and calculate
+    return (yieldAmount * getFieldArea(currentField) * price * 10).toLocaleString('en-IN'); // Convert to quintals and calculate
   };
 
   return (
@@ -219,7 +250,9 @@ const YieldPrediction = () => {
               className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {fields.map(field => (
-                <option key={field.id} value={field.id}>{field.name} - {field.crop}</option>
+                <option key={field._id || field.id} value={field._id || field.id}>
+                  {getFieldName(field)} - {getFieldCrop(field)}
+                </option>
               ))}
             </select>
             <select
@@ -236,6 +269,39 @@ const YieldPrediction = () => {
       </div>
 
       <div className="px-6 space-y-6">
+        {/* Loading State */}
+        {fieldsLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <FontAwesomeIcon icon={faSpinner} className="text-2xl text-blue-600 animate-spin mr-3" />
+            <span className="text-lg text-gray-600">Loading fields...</span>
+          </div>
+        ) : error ? (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+            <FontAwesomeIcon icon={faExclamationTriangle} className="text-3xl text-red-600 mb-3" />
+            <h3 className="text-lg font-semibold text-red-800 mb-2">Unable to Load Fields</h3>
+            <p className="text-red-600 mb-4">{error}</p>
+            <button
+              onClick={fetchFields}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              <FontAwesomeIcon icon={faRefresh} className="mr-2" />
+              Retry
+            </button>
+          </div>
+        ) : fields.length === 0 ? (
+          <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+            <FontAwesomeIcon icon={faWheatAwn} className="text-4xl text-gray-400 mb-3" />
+            <h3 className="text-xl font-semibold text-gray-700">No fields available</h3>
+            <p className="text-gray-600 mb-4">Create some fields first to view yield predictions</p>
+            <a
+              href="/create-field"
+              className="inline-block bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-colors"
+            >
+              Create your first field
+            </a>
+          </div>
+        ) : (
+        <>
         {/* Field Overview */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Field Overview</h2>
@@ -245,16 +311,16 @@ const YieldPrediction = () => {
                 <FontAwesomeIcon icon={faLeaf} className="text-blue-600 mr-2" />
                 <span className="font-medium text-gray-900">Field</span>
               </div>
-              <p className="text-xl font-bold text-gray-900">{currentField?.name}</p>
-              <p className="text-sm text-gray-600">{currentField?.area} acres</p>
+              <p className="text-xl font-bold text-gray-900">{getFieldName(currentField)}</p>
+              <p className="text-sm text-gray-600">{getFieldArea(currentField)} acres</p>
             </div>
             <div className="bg-green-50 rounded-lg p-4">
               <div className="flex items-center mb-2">
                 <FontAwesomeIcon icon={faWheatAwn} className="text-green-600 mr-2" />
                 <span className="font-medium text-gray-900">Crop</span>
               </div>
-              <p className="text-xl font-bold text-gray-900">{currentField?.crop}</p>
-              <p className="text-sm text-gray-600">Planted: {new Date(currentField?.plantedDate).toLocaleDateString()}</p>
+              <p className="text-xl font-bold text-gray-900">{getFieldCrop(currentField)}</p>
+              <p className="text-sm text-gray-600">Planted: {getPlantedDate(currentField)}</p>
             </div>
             <div className="bg-purple-50 rounded-lg p-4">
               <div className="flex items-center mb-2">
@@ -320,7 +386,7 @@ const YieldPrediction = () => {
               <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
                 <span className="text-sm text-gray-600">Expected Total Harvest</span>
                 <span className="font-medium text-gray-900">
-                  {(prediction?.predictedYield * currentField?.area * 2.47).toFixed(1)} tons
+                  {(prediction?.predictedYield * getFieldArea(currentField) * 2.47).toFixed(1)} tons
                 </span>
               </div>
             </div>
@@ -345,11 +411,11 @@ const YieldPrediction = () => {
               </div>
               
               <div className="text-3xl font-bold text-gray-900 mb-1">
-                ₹{marketData?.predicted}{currentField?.crop === 'Tomato' ? '/kg' : '/quintal'}
+                ₹{marketData?.predicted}{getFieldCrop(currentField) === 'Tomato' ? '/kg' : '/quintal'}
               </div>
               
               <div className="text-sm text-gray-600 mb-4">
-                Current: ₹{marketData?.current}{currentField?.crop === 'Tomato' ? '/kg' : '/quintal'}
+                Current: ₹{marketData?.current}{getFieldCrop(currentField) === 'Tomato' ? '/kg' : '/quintal'}
               </div>
             </div>
 
@@ -464,6 +530,8 @@ const YieldPrediction = () => {
             </div>
           </div>
         </div>
+        </>
+        )}
       </div>
     </div>
   );

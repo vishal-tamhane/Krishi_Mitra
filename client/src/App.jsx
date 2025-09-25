@@ -36,6 +36,7 @@ function App() {
             <Route path="/irrigation" element={<WaterManagement />} />
             <Route path="/ai-assistant" element={<AIAssistant />} />            
             <Route path="/create-field" element={<CreateField />} />
+            <Route path="/fields" element={<Fields />} />
             <Route path="/field-list" element={<Fields />} />
             <Route path="/field-detail/:id" element={<FieldDetail />} />            
             <Route path="/crop-lifecycle" element={<CropLifecycle />} />
