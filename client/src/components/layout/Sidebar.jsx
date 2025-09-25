@@ -64,23 +64,39 @@ const Sidebar = ({ isSidebarOpen, isCollapsed, toggleSidebar }) => {
   });
   
   // Detect screen size for responsive behavior
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [isTablet, setIsTablet] = useState(window.innerWidth >= 768 && window.innerWidth < 1024);
+  const [screenSize, setScreenSize] = useState({
+    isMobile: window.innerWidth < 768,
+    isTablet: window.innerWidth >= 768 && window.innerWidth < 1024,
+    isDesktop: window.innerWidth >= 1024
+  });
 
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
-      setIsMobile(width < 768);
-      setIsTablet(width >= 768 && width < 1024);
+      setScreenSize({
+        isMobile: width < 768,
+        isTablet: width >= 768 && width < 1024,
+        isDesktop: width >= 1024
+      });
     };
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    // Add debouncing to prevent excessive re-renders
+    let timeoutId;
+    const debouncedResize = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(handleResize, 100);
+    };
+
+    window.addEventListener('resize', debouncedResize);
+    return () => {
+      window.removeEventListener('resize', debouncedResize);
+      clearTimeout(timeoutId);
+    };
   }, []);
 
   const toggleMenu = (menu) => {
     // Don't expand menus if sidebar is collapsed on desktop
-    if (!isMobile && isCollapsed) {
+    if (screenSize.isDesktop && isCollapsed) {
       toggleSidebar(); // Expand the sidebar first
       return;
     }
@@ -105,10 +121,10 @@ const Sidebar = ({ isSidebarOpen, isCollapsed, toggleSidebar }) => {
 
   // Handler to collapse sidebar on link click for mobile devices
 const handleLinkClick = useCallback(() => {
-  if (isMobile && isSidebarOpen) {
-    toggleSidebar(); // Collapse sidebar on mobile screens
+  if ((screenSize.isMobile || screenSize.isTablet) && isSidebarOpen) {
+    toggleSidebar(); // Collapse sidebar on mobile and tablet screens
   }
-}, [isMobile, isSidebarOpen, toggleSidebar]);
+}, [screenSize.isMobile, screenSize.isTablet, isSidebarOpen, toggleSidebar]);
 
 // Attach the click handler to sidebar links using event delegation
 useEffect(() => {
@@ -133,10 +149,10 @@ useEffect(() => {
       className={`fixed top-0 left-0 z-40 h-screen transition-all duration-300 ease-in-out bg-white border-r border-blue-200 shadow-xl ${
         isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
       } ${
-        isMobile 
-          ? 'w-[85vw] max-w-[300px] sm:max-w-[320px]' 
-          : isTablet 
-            ? (isCollapsed ? 'w-16' : 'w-60') 
+        screenSize.isMobile 
+          ? 'w-[85vw] max-w-[280px]' 
+          : screenSize.isTablet 
+            ? (isCollapsed ? 'w-20' : 'w-64') 
             : (isCollapsed ? 'w-20' : 'w-64')
       }` }
       aria-label="Sidebar"
@@ -171,74 +187,115 @@ useEffect(() => {
           </div>
           
           {/* Navigation Links */}
-          <nav className="mt-3 md:mt-4 px-2 md:px-3">
+          <nav className={`${screenSize.isMobile ? 'mt-3 px-2' : screenSize.isTablet ? 'mt-3 px-3' : 'mt-4 px-4'}`}>
             {/* Main Dashboard */}
-            <div className="mb-4 md:mb-5">
+            <div className={screenSize.isMobile ? 'mb-3' : 'mb-4'}>
               {!isCollapsed && (
                 <h3 className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-2 px-2">
                   Main
                 </h3>
               )}
-              <ul className="space-y-1 md:space-y-1.5">
+              <ul className={screenSize.isMobile ? 'space-y-1' : 'space-y-1.5'}>
                 <li>
                   <Link
                     to="/"
-                    className={`flex items-center px-2 md:px-3 py-2 md:py-2.5 rounded-lg ${isCollapsed ? 'justify-center' : ''} ${
+                    className={`flex items-center rounded-lg ${isCollapsed ? 'justify-center' : ''} ${
                       isActive('/') 
                         ? 'bg-blue-500 text-white font-medium shadow-sm' 
                         : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
-                    } group transition-all duration-200 touch-manipulation`}
+                    } group transition-all duration-200 touch-manipulation ${
+                      screenSize.isMobile 
+                        ? 'px-2 py-3 min-h-[44px]' 
+                        : screenSize.isTablet 
+                          ? 'px-3 py-2.5' 
+                          : 'px-3 py-2.5'
+                    }`}
                   >
                     <FontAwesomeIcon
                       icon={faHome}
-                      className={`w-4 h-4 md:w-5 md:h-5 ${isActive('/') ? 'text-white' : 'text-gray-500 group-hover:text-blue-600'}`}
+                      className={`${
+                        screenSize.isMobile ? 'w-4 h-4' : 'w-5 h-5'
+                      } ${isActive('/') ? 'text-white' : 'text-gray-500 group-hover:text-blue-600'}`}
                     />
-                    {!isCollapsed && <span className="ml-2 md:ml-3 whitespace-nowrap text-sm md:text-base">Dashboard</span>}
+                    {!isCollapsed && (
+                      <span className={`whitespace-nowrap ${
+                        screenSize.isMobile ? 'ml-2 text-sm' : 'ml-3 text-base'
+                      }`}>
+                        Dashboard
+                      </span>
+                    )}
                   </Link>
                 </li>
               </ul>
             </div>
             {/* Field Management */}
-            <div className="mb-4">
+            <div className={screenSize.isMobile ? 'mb-3' : 'mb-4'}>
               {!isCollapsed && (
                 <h3 className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-2 px-2">
                   Field Management
                 </h3>
               )}
-              <ul className="space-y-1">
-                
-              <li>
-                        <Link
-                          to="/create-field"
-                          className={`flex items-center px-3 py-2 rounded-md ${
-                            isActive('/create-field') 
-                              ? 'bg-blue-500 text-white font-medium' 
-                              : 'text-gray-600 hover:text-blue-700 hover:bg-blue-50'
-                          } transition-all duration-200`}
-                        >
-                          <FontAwesomeIcon
-                            icon={faDraftingCompass}
-                            className={`w-4 h-4 mr-2 ${isActive('/create-field') ? 'text-white' : 'text-gray-500'}`}
-                          />
-                          <span>Create New Field</span>
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          to="/fields"
-                          className={`flex items-center px-3 py-2 rounded-md ${
-                            isActive('/fields') 
-                              ? 'bg-blue-500 text-white font-medium' 
-                              : 'text-gray-600 hover:text-blue-700 hover:bg-blue-50'
-                          } transition-all duration-200`}
-                        >
-                          <FontAwesomeIcon
-                            icon={faMap}
-                            className={`w-4 h-4 mr-2 ${isActive('/fields') ? 'text-white' : 'text-gray-500'}`}
-                          />
-                          <span>Manage Fields</span>
-                        </Link>
-                      </li>
+              <ul className={screenSize.isMobile ? 'space-y-1' : 'space-y-1.5'}>
+                <li>
+                  <Link
+                    to="/create-field"
+                    className={`flex items-center rounded-lg ${isCollapsed ? 'justify-center' : ''} ${
+                      isActive('/create-field') 
+                        ? 'bg-blue-500 text-white font-medium shadow-sm' 
+                        : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
+                    } group transition-all duration-200 touch-manipulation ${
+                      screenSize.isMobile 
+                        ? 'px-2 py-3 min-h-[44px]' 
+                        : screenSize.isTablet 
+                          ? 'px-3 py-2.5' 
+                          : 'px-3 py-2.5'
+                    }`}
+                  >
+                    <FontAwesomeIcon
+                      icon={faDraftingCompass}
+                      className={`${
+                        screenSize.isMobile ? 'w-4 h-4' : 'w-5 h-5'
+                      } ${isActive('/create-field') ? 'text-white' : 'text-gray-500 group-hover:text-blue-600'}`}
+                    />
+                    {!isCollapsed && (
+                      <span className={`whitespace-nowrap ${
+                        screenSize.isMobile ? 'ml-2 text-sm' : 'ml-3 text-base'
+                      }`}>
+                        Create New Field
+                      </span>
+                    )}
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/fields"
+                    className={`flex items-center rounded-lg ${isCollapsed ? 'justify-center' : ''} ${
+                      isActive('/fields') 
+                        ? 'bg-blue-500 text-white font-medium shadow-sm' 
+                        : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
+                    } group transition-all duration-200 touch-manipulation ${
+                      screenSize.isMobile 
+                        ? 'px-2 py-3 min-h-[44px]' 
+                        : screenSize.isTablet 
+                          ? 'px-3 py-2.5' 
+                          : 'px-3 py-2.5'
+                    }`}
+                  >
+                    <FontAwesomeIcon
+                      icon={faMap}
+                      className={`${
+                        screenSize.isMobile ? 'w-4 h-4' : 'w-5 h-5'
+                      } ${isActive('/fields') ? 'text-white' : 'text-gray-500 group-hover:text-blue-600'}`}
+                    />
+                    {!isCollapsed && (
+                      <span className={`whitespace-nowrap ${
+                        screenSize.isMobile ? 'ml-2 text-sm' : 'ml-3 text-base'
+                      }`}>
+                        Manage Fields
+                      </span>
+                    )}
+                  </Link>
+                </li>
               </ul>
             </div>
 
