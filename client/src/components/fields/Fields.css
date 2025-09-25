@@ -109,7 +109,29 @@
   transition: all 150ms ease-in-out;
 }
 
+/* Responsive enhancements */
+@media (max-width: 768px) {
+  .fields-page {
+    padding: 1rem;
+  }
+  
+  .fields-page th,
+  .fields-page td {
+    padding: 8px 12px;
+    font-size: 0.875rem;
+  }
+  
+  .fields-page .btn {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+  }
+}
+
 @media (max-width: 640px) {
+  .fields-page {
+    padding: 0.75rem;
+  }
+  
   .field-detail-page .field-body {
     display: flex;
     flex-direction: column-reverse;
@@ -118,5 +140,20 @@
   .field-detail-page .field-map {
     margin-bottom: 1.5rem;
     height: 300px;
+  }
+  
+  .fields-page .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Touch-friendly interactions */
+@media (hover: none) and (pointer: coarse) {
+  .fields-page .btn,
+  .fields-page button,
+  .fields-page a {
+    min-height: 44px;
+    min-width: 44px;
   }
 }
